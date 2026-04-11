@@ -1,13 +1,16 @@
 import os
+
+# До загрузки libpq: на Windows иначе часто берётся локаль, и UTF-8 из Python пишется в БД с искажениями.
+os.environ.setdefault("PGCLIENTENCODING", "UTF8")
+
 from contextlib import contextmanager
-from urllib.parse import quote_plus
 from dataclasses import fields, is_dataclass
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Type, get_args, get_type_hints
 from uuid import UUID
 
-import psycopg2
+import psycopg2  # noqa: E402 — после setdefault PGCLIENTENCODING
 from dotenv import load_dotenv
 from psycopg2 import sql
 from psycopg2.extras import RealDictCursor
@@ -25,33 +28,34 @@ class PostgresDriver:
         self.db_name = os.getenv("DB_NAME", "postgres")
         self.db_user = os.getenv("DB_USER", "postgres")
         self.db_password = os.getenv("DB_PASSWORD")
-        self.db_client_encoding = os.getenv("DB_CLIENT_ENCODING", "").strip()
         if not self.db_password:
             raise RuntimeError(
                 "DB_PASSWORD is missing. Set it in your .env file."
             )
 
-    def _connect_dsn(self) -> str:
-        """URI with percent-encoded credentials — avoids libpq/psycopg2 decode issues on Windows."""
-        user = quote_plus(self.db_user)
-        password = quote_plus(self.db_password)
-        db = quote_plus(self.db_name)
-        port = str(self.db_port).strip()
-        return (
-            f"postgresql://{user}:{password}@{self.db_host}:{port}/{db}"
-            f"?connect_timeout=5"
+    def _open_connection(self) -> psycopg2.extensions.connection:
+        """Подключение с явным UTF-8 (и через libpq, и через psycopg2)."""
+        port_raw = str(self.db_port).strip()
+        try:
+            port = int(port_raw)
+        except ValueError:
+            port = 5432
+        conn = psycopg2.connect(
+            host=self.db_host.strip(),
+            port=port,
+            dbname=self.db_name.strip(),
+            user=self.db_user,
+            password=self.db_password,
+            connect_timeout=5,
+            options="-c client_encoding=UTF8",
         )
-
-    def _configure_client_encoding(self, conn: psycopg2.extensions.connection) -> None:
-        """Apply DB_CLIENT_ENCODING after connect (e.g. WIN1251 for localized server messages)."""
-        if not self.db_client_encoding:
-            return
+        conn.set_client_encoding("UTF8")
         with conn.cursor() as cur:
-            cur.execute("SET client_encoding TO %s", (self.db_client_encoding,))
+            cur.execute("SET client_encoding TO 'UTF8'")
+        return conn
 
     def __enter__(self) -> PostgresDriver:
-        self._conn = psycopg2.connect(self._connect_dsn())
-        self._configure_client_encoding(self._conn)
+        self._conn = self._open_connection()
         return self
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
@@ -76,9 +80,11 @@ class PostgresDriver:
         if self._conn is not None:
             yield self._conn
         else:
-            with psycopg2.connect(self._connect_dsn()) as conn:
-                self._configure_client_encoding(conn)
+            conn = self._open_connection()
+            try:
                 yield conn
+            finally:
+                conn.close()
 
     def _commit_if_managed(self, conn: psycopg2.extensions.connection) -> None:
         if self._conn is not None:

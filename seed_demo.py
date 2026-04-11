@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Демо-данные: ≥3 пользователей, ≥3 столов, ≥2 бронирований (для проверки в PgAdmin)."""
 
 from datetime import datetime, timezone

@@ -21,7 +21,16 @@ pip install -r requirements.txt
 Скопируйте [`.env.example`](.env.example) в `.env` и укажите параметры подключения:
 
 - `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` — обязательно (пароль в `.env`, не коммитить).
-- При необходимости: `DB_CLIENT_ENCODING` (например для сообщений сервера в WIN1251).
+
+Подключение к PostgreSQL выставляет **UTF-8**: переменная окружения `PGCLIENTENCODING=UTF8` до загрузки libpq, параметры `psycopg2.connect(..., options='-c client_encoding=UTF8')` и `connection.set_client_encoding('UTF8')`. На Windows без этого кириллица из Python часто превращается в строки вида `РЈ РѕРєРЅР°` вместо «У окна».
+
+**Уже испорченные строки** автоматически не восстанавливаются (это другой набор символов Unicode, не «Latin-1 → UTF-8»). Очистите таблицы и вставьте данные заново:
+
+```bash
+python reseed_demo.py
+```
+
+Скрипт выполняет `TRUNCATE ... CASCADE` по `users`, `tables`, `bookings` и снова вызывает логику `seed_demo.py`.
 
 В коде используется `load_dotenv()` (см. [`app.py`](app.py), [`postgres_driver.py`](postgres_driver.py)).
 
