@@ -1,0 +1,8 @@
+# Скопируйте в .env и подставьте свои значения.
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=postgres
+DB_USER=postgres
+DB_PASSWORD=
+# Необязательно: кодировка клиента (например WIN1251)
+# DB_CLIENT_ENCODING=
