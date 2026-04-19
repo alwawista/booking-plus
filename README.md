@@ -17,7 +17,7 @@ pip install -r requirements.txt
 
 ## Настройка окружения
 
-Скопируйте [`.env.example`](.env.example) в `.env` и укажите `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` (пароль только в локальном `.env`, не коммитить).
+Скопируйте [`EnvExample`](EnvExample) или [`.env.example`](.env.example) в `.env` и укажите `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` (пароль только в локальном `.env`, не коммитить).
 
 Клиент к БД принудительно использует UTF-8 (`PGCLIENTENCODING`, параметры `psycopg2.connect`), чтобы кириллица корректно отображалась в pgAdmin.
 
@@ -42,7 +42,7 @@ python app.py
 | [`models/`](models/) | Модели `User`, `Table`, `Booking` |
 | [`app.py`](app.py) | GUI (tkinter) и точка входа |
 | [`requirements.txt`](requirements.txt) | Зависимости |
-| [`.env.example`](.env.example) | Шаблон переменных без секретов |
+| [`.env.example`](.env.example), [`EnvExample`](EnvExample) | Шаблон переменных без секретов (пароль только в `.env`) |
 | [`README.md`](README.md) | Этот файл |
 
 ## Зависимости
