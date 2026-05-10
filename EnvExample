@@ -1,8 +1,0 @@
-# Скопируйте в .env и подставьте свои значения.
-# DB_PASSWORD и другие секреты — только в локальном .env, не коммитить.
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=postgres
-DB_USER=postgres
-DB_PASSWORD=
-# Кодировка клиента задаётся в postgres_driver принудительно как UTF-8 (кириллица в pgAdmin).
